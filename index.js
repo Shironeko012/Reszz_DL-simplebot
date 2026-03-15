@@ -5,13 +5,6 @@ const express = require("express")
 const fs = require("fs-extra")
 const path = require("path")
 
-const {
-default: makeWASocket,
-useMultiFileAuthState,
-DisconnectReason,
-fetchLatestBaileysVersion
-} = require("@whiskeysockets/baileys")
-
 const qrcodeTerminal = require("qrcode-terminal")
 const QRCode = require("qrcode")
 const pino = require("pino")
@@ -24,6 +17,28 @@ const app = express()
 
 const isRailway = !!process.env.RAILWAY_ENVIRONMENT
 const isTermux = process.platform === "android"
+
+/*
+=====================
+LOAD BAILEYS (ESM FIX)
+=====================
+*/
+
+let makeWASocket
+let useMultiFileAuthState
+let DisconnectReason
+let fetchLatestBaileysVersion
+
+async function loadBaileys(){
+
+const baileys = await import("@whiskeysockets/baileys")
+
+makeWASocket = baileys.default
+useMultiFileAuthState = baileys.useMultiFileAuthState
+DisconnectReason = baileys.DisconnectReason
+fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion
+
+}
 
 /*
 =====================
@@ -66,6 +81,8 @@ START BOT
 async function startBot(){
 
 try{
+
+await loadBaileys()
 
 logger.info("Starting WhatsApp Bot")
 
@@ -189,8 +206,6 @@ AUTO CLEANUP TEMP
 
 function startCleanup(){
 
-const interval = config.CLEANUP_INTERVAL || 7200000
-
 setInterval(()=>{
 
 try{
@@ -199,28 +214,25 @@ if(!fs.existsSync(config.TEMP_DIR)) return
 
 const files = fs.readdirSync(config.TEMP_DIR)
 
-if(files.length === 0) return
-
 for(const file of files){
 
 try{
-fs.unlinkSync(path.join(config.TEMP_DIR,file))
+fs.unlinkSync(
+path.join(config.TEMP_DIR,file)
+)
 }catch{}
 
 }
 
+if(files.length > 0){
 logger.info("Temp cleaned")
-
-}catch(err){
-
-logger.error("Cleanup error")
-
 }
 
-}, interval)
+}catch{}
+
+}, config.CLEANUP_INTERVAL)
 
 }
-
 
 /*
 =====================
