@@ -8,15 +8,13 @@ const logger = require("../utils/logger")
 const MAX_RETRY = 2
 const PROCESS_TIMEOUT = 1000 * 60 * 10
 
+
 function spawnYTDLP(args){
 
-let cmd = "yt-dlp"
-
-return spawn(cmd,args,{
-shell:true
-})
+return spawn("yt-dlp", args)
 
 }
+
 
 function parseProgress(text){
 
@@ -29,6 +27,7 @@ size: sizeMatch ? sizeMatch[1].replace("iB","B") : null
 }
 
 }
+
 
 function buildArgs(job, output){
 
@@ -43,8 +42,9 @@ return [
 
 "-x",
 "--audio-format","mp3",
+"--audio-quality","0",
 
-"-o",output,
+"-o", output,
 
 job.url
 
@@ -59,15 +59,18 @@ return [
 "--no-part",
 "--no-mtime",
 
-"-f","bestvideo[height<=720]+bestaudio/best[height<=720]",
+"-f","bestvideo+bestaudio/best",
 
-"-o",output,
+"--merge-output-format","mp4",
+
+"-o", output,
 
 job.url
 
 ]
 
 }
+
 
 async function runProcess(args,job){
 
@@ -85,7 +88,8 @@ yt.kill("SIGKILL")
 
 reject(new Error("Download timeout"))
 
-},PROCESS_TIMEOUT)
+}, PROCESS_TIMEOUT)
+
 
 const handleProgress = (data)=>{
 
@@ -107,22 +111,32 @@ job.progress(progress.percent,progress.size)
 
 }
 
-yt.stderr.on("data",handleProgress)
-yt.stdout.on("data",handleProgress)
+
+yt.stderr.on("data", handleProgress)
+yt.stdout.on("data", handleProgress)
+
 
 yt.on("error",(err)=>{
+
 clearTimeout(timeout)
+
 reject(err)
+
 })
+
 
 yt.on("close",(code)=>{
 
 clearTimeout(timeout)
 
 if(code !== 0){
+
 reject(new Error("yt-dlp exit "+code))
+
 }else{
+
 resolve()
+
 }
 
 })
@@ -130,6 +144,7 @@ resolve()
 })
 
 }
+
 
 async function verify(file){
 
@@ -144,14 +159,17 @@ if(stat.size < 10000) return false
 return true
 
 }catch{
+
 return false
+
 }
 
 }
+
 
 async function attempt(job,attempt){
 
-const ext = job.type==="mp3"?"mp3":"mp4"
+const ext = job.type === "mp3" ? "mp3" : "mp4"
 
 const name = Date.now()+"-"+Math.floor(Math.random()*9999)
 
@@ -175,22 +193,26 @@ return file
 
 }
 
+
 async function download(job){
 
 for(let i=0;i<=MAX_RETRY;i++){
 
 try{
+
 return await attempt(job,i+1)
+
 }catch(e){
 
 logger.error(`Attempt ${i+1} failed ${e}`)
 
-if(i===MAX_RETRY) throw e
+if(i === MAX_RETRY) throw e
 
 }
 
 }
 
 }
+
 
 module.exports = { download }
