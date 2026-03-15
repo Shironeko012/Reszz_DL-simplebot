@@ -12,11 +12,9 @@ function spawnYTDLP(args){
 
 let cmd = "yt-dlp"
 
-if(process.platform === "android"){
-cmd = "yt-dlp"
-}
-
-return spawn(cmd,args)
+return spawn(cmd,args,{
+shell:true
+})
 
 }
 
@@ -61,7 +59,7 @@ return [
 "--no-part",
 "--no-mtime",
 
-"-f","mp4",
+"-f","bestvideo[height<=720]+bestaudio/best[height<=720]",
 
 "-o",output,
 
@@ -89,7 +87,7 @@ reject(new Error("Download timeout"))
 
 },PROCESS_TIMEOUT)
 
-yt.stderr.on("data",(data)=>{
+const handleProgress = (data)=>{
 
 const text = data.toString()
 
@@ -107,7 +105,10 @@ job.progress(progress.percent,progress.size)
 
 }
 
-})
+}
+
+yt.stderr.on("data",handleProgress)
+yt.stdout.on("data",handleProgress)
 
 yt.on("error",(err)=>{
 clearTimeout(timeout)
