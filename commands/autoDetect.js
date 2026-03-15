@@ -82,7 +82,7 @@ Gunakan command berikut:
 
 atau
 
-.mp3 ${url} Audio` 
+.mp3 ${url} Audio`
 
 
 await sock.sendMessage(jid,{
