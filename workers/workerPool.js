@@ -3,7 +3,9 @@ const ytWorker = require("./ytWorker")
 const logger = require("../utils/logger")
 
 const CPU = os.cpus().length
-const MAX_WORKERS = Math.max(2, Math.floor(CPU / 2))
+
+// Railway biasanya hanya punya 1-2 core
+const MAX_WORKERS = Math.max(1, Math.floor(CPU / 2))
 
 let activeWorkers = 0
 
@@ -12,8 +14,7 @@ const activeJobs = new Map()
 
 function runNext(){
 
-if(queue.length === 0) return
-if(activeWorkers >= MAX_WORKERS) return
+while(queue.length > 0 && activeWorkers < MAX_WORKERS){
 
 const job = queue.shift()
 
@@ -22,6 +23,8 @@ activeWorkers++
 activeJobs.set(job.url,true)
 
 execute(job)
+
+}
 
 }
 
@@ -53,9 +56,20 @@ function add(job){
 
 return new Promise((resolve,reject)=>{
 
+// cek apakah sedang download
 if(activeJobs.has(job.url)){
 
 reject(new Error("Download already running"))
+return
+
+}
+
+// cek apakah sudah ada di queue
+const exists = queue.find(q => q.url === job.url)
+
+if(exists){
+
+reject(new Error("Already in queue"))
 return
 
 }
