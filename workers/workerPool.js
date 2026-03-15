@@ -4,13 +4,19 @@ const logger = require("../utils/logger")
 
 const CPU = os.cpus().length
 
-// Railway biasanya hanya punya 1-2 core
+// Railway biasanya hanya punya 1–2 core
 const MAX_WORKERS = Math.max(1, Math.floor(CPU / 2))
 
 let activeWorkers = 0
 
 const queue = []
-const activeJobs = new Map()
+
+// download yang sedang berjalan
+const activeJobs = new Set()
+
+// index queue untuk mencegah duplicate
+const queueIndex = new Set()
+
 
 function runNext(){
 
@@ -18,15 +24,18 @@ while(queue.length > 0 && activeWorkers < MAX_WORKERS){
 
 const job = queue.shift()
 
+queueIndex.delete(job.url)
+
 activeWorkers++
 
-activeJobs.set(job.url,true)
+activeJobs.add(job.url)
 
 execute(job)
 
 }
 
 }
+
 
 async function execute(job){
 
@@ -52,27 +61,35 @@ setImmediate(runNext)
 
 }
 
+
 function add(job){
 
 return new Promise((resolve,reject)=>{
 
-// cek apakah sedang download
+// sedang didownload
 if(activeJobs.has(job.url)){
 
+logger.info(`Duplicate blocked (active): ${job.url}`)
+
 reject(new Error("Download already running"))
+
 return
 
 }
 
-// cek apakah sudah ada di queue
-const exists = queue.find(q => q.url === job.url)
+// sudah ada di queue
+if(queueIndex.has(job.url)){
 
-if(exists){
+logger.info(`Duplicate blocked (queue): ${job.url}`)
 
 reject(new Error("Already in queue"))
+
 return
 
 }
+
+// lock url agar tidak masuk dua kali
+queueIndex.add(job.url)
 
 queue.push({
 
@@ -90,6 +107,7 @@ runNext()
 
 }
 
+
 function stats(){
 
 return {
@@ -102,6 +120,7 @@ activeDownloads: activeJobs.size
 }
 
 }
+
 
 module.exports = {
 
