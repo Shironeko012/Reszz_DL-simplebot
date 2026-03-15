@@ -27,11 +27,14 @@ let sock = null
 =====================
 SESSION PATH
 =====================
+Railway  -> ./session
+Termux   -> config.SESSION_DIR
 */
 
 const SESSION_PATH = isRailway
-? "/data/session"
+? path.join(__dirname,"session")
 : config.SESSION_DIR
+
 
 /*
 =====================
@@ -54,6 +57,7 @@ DisconnectReason = baileys.DisconnectReason
 fetchLatestBaileysVersion = baileys.fetchLatestBaileysVersion
 
 }
+
 
 /*
 =====================
@@ -87,6 +91,7 @@ console.log("Web server running on port",PORT)
 
 }
 
+
 /*
 =====================
 START BOT
@@ -100,10 +105,6 @@ try{
 await loadBaileys()
 
 logger.info("Starting WhatsApp Bot")
-
-/*
-SESSION AUTH
-*/
 
 const { state, saveCreds } =
 await useMultiFileAuthState(SESSION_PATH)
@@ -214,6 +215,7 @@ setTimeout(startBot,5000)
 
 }
 
+
 /*
 =====================
 AUTO CLEANUP TEMP
@@ -249,6 +251,7 @@ logger.info("Temp cleaned")
 }, config.CLEANUP_INTERVAL)
 
 }
+
 
 /*
 =====================
