@@ -46,7 +46,7 @@ try{
 const file = await workerPool.add({
 
 url:fixedURL,
-type:"video",
+type:"mp4",
 
 progress: async(percent,size)=>{
 
