@@ -6,12 +6,11 @@ const fs = require("fs")
 
 module.exports = {
 
-name:"mp3",
+name:"dl",
 
 async execute({sock,msg,args}){
 
 const jid = msg.key.remoteJid
-
 const url = args[0]
 
 if(!url){
@@ -33,7 +32,7 @@ const fixedURL = await linkConverter.convert(url)
 const stats = workerPool.stats()
 
 const progressMsg = await sock.sendMessage(jid,{
-text:`Audio queued
+text:`Video queued
 
 Queue: ${stats.queueLength}
 Workers: ${stats.workers}/${stats.maxWorkers}`
@@ -47,7 +46,7 @@ try{
 const file = await workerPool.add({
 
 url:fixedURL,
-type:"mp3",
+type:"video",
 
 progress: async(percent,size)=>{
 
@@ -69,15 +68,15 @@ edit:progressMsg.key
 })
 
 await sock.sendMessage(jid,{
-audio:{url:file},
-mimetype:"audio/mpeg"
+video:{url:file},
+mimetype:"video/mp4"
 })
 
 try{ fs.unlinkSync(file) }catch{}
 
 }catch{
 
-await sock.sendMessage(jid,{text:"Audio download failed"})
+await sock.sendMessage(jid,{text:"Video download failed"})
 
 }
 
