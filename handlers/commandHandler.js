@@ -5,9 +5,12 @@ const config = require("../config")
 
 const commands = new Map()
 
+// prevent duplicate command
+const runningCommands = new Set()
+
 function loadCommands(){
 
-const dir = path.join(__dirname, "../commands")
+const dir = path.join(__dirname,"../commands")
 
 const files = fs.readdirSync(dir)
 
@@ -22,18 +25,17 @@ const cmd = require(`../commands/${file}`)
 if(!cmd.name || !cmd.execute){
 
 logger.warn(`Invalid command: ${file}`)
-
 continue
 
 }
 
-commands.set(cmd.name, cmd)
+commands.set(cmd.name,cmd)
 
 logger.info(`Loaded command: ${cmd.name}`)
 
 }catch(e){
 
-logger.error("Command load error: " + file)
+logger.error("Command load error: "+file)
 
 }
 
@@ -43,11 +45,25 @@ logger.error("Command load error: " + file)
 
 loadCommands()
 
-module.exports = async function(sock, msg, text){
+module.exports = async function(sock,msg,text){
 
 try{
 
-const args = text.slice(config.PREFIX.length).trim().split(/\s+/)
+const id = msg.key.id
+
+if(runningCommands.has(id)) return
+
+runningCommands.add(id)
+
+setTimeout(()=>{
+runningCommands.delete(id)
+},10000)
+
+
+const args = text
+.slice(config.PREFIX.length)
+.trim()
+.split(/\s+/)
 
 const commandName = args.shift().toLowerCase()
 
@@ -56,16 +72,14 @@ const cmd = commands.get(commandName)
 if(!cmd) return
 
 await cmd.execute({
-
 sock,
 msg,
 args
-
 })
 
 }catch(e){
 
-logger.error("commandHandler error: " + e)
+logger.error("commandHandler error: "+e)
 
 }
 
