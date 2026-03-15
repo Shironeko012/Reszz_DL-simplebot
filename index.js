@@ -4,6 +4,9 @@ if (!global.crypto) global.crypto = crypto.webcrypto
 const express = require("express")
 const fs = require("fs-extra")
 const path = require("path")
+const { EventEmitter } = require("events")
+
+EventEmitter.defaultMaxListeners = 50
 
 const qrcodeTerminal = require("qrcode-terminal")
 const QRCode = require("qrcode")
@@ -17,6 +20,8 @@ const app = express()
 
 const isRailway = !!process.env.RAILWAY_ENVIRONMENT
 const isTermux = process.platform === "android"
+
+let sock = null
 
 /*
 =====================
@@ -92,15 +97,12 @@ await useMultiFileAuthState(config.SESSION_DIR)
 const { version } =
 await fetchLatestBaileysVersion()
 
-const sock = makeWASocket({
+sock = makeWASocket({
 
 version,
 auth: state,
-
 logger: pino({ level:"silent" }),
-
 browser:["Downloader","Bot","Node"],
-
 markOnlineOnConnect:true
 
 })
@@ -154,7 +156,9 @@ logger.error("Connection closed")
 
 if(reason !== DisconnectReason.loggedOut){
 
-setTimeout(startBot,5000)
+setTimeout(()=>{
+startBot()
+},5000)
 
 }
 
