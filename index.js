@@ -25,6 +25,16 @@ let sock = null
 
 /*
 =====================
+SESSION PATH
+=====================
+*/
+
+const SESSION_PATH = isRailway
+? "/data/session"
+: config.SESSION_DIR
+
+/*
+=====================
 LOAD BAILEYS (ESM FIX)
 =====================
 */
@@ -91,8 +101,12 @@ await loadBaileys()
 
 logger.info("Starting WhatsApp Bot")
 
+/*
+SESSION AUTH
+*/
+
 const { state, saveCreds } =
-await useMultiFileAuthState(config.SESSION_DIR)
+await useMultiFileAuthState(SESSION_PATH)
 
 const { version } =
 await fetchLatestBaileysVersion()
@@ -156,9 +170,7 @@ logger.error("Connection closed")
 
 if(reason !== DisconnectReason.loggedOut){
 
-setTimeout(()=>{
-startBot()
-},5000)
+setTimeout(startBot,5000)
 
 }
 
@@ -248,7 +260,7 @@ async function init(){
 
 await fs.ensureDir(config.TEMP_DIR)
 await fs.ensureDir(config.LOG_DIR)
-await fs.ensureDir(config.SESSION_DIR)
+await fs.ensureDir(SESSION_PATH)
 
 startCleanup()
 startBot()
