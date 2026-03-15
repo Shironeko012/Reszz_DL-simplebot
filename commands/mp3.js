@@ -11,7 +11,6 @@ name:"mp3",
 async execute({sock,msg,args}){
 
 const jid = msg.key.remoteJid
-
 const url = args[0]
 
 if(!url){
@@ -30,13 +29,17 @@ return
 
 const fixedURL = await linkConverter.convert(url)
 
-const queue = workerPool.stats()
+const stats = workerPool.stats()
 
 const progressMsg = await sock.sendMessage(jid,{
-text:`Audio queued\nQueue: ${queue.queueLength}`
+text:`Audio queued
+
+Queue: ${stats.queueLength}
+Workers: ${stats.workers}/${stats.maxWorkers}`
 })
 
 let last = 0
+let lastEdit = 0
 
 try{
 
@@ -47,9 +50,13 @@ type:"mp3",
 
 progress: async(percent,size)=>{
 
-if(percent-last<8) return
+const now = Date.now()
+
+if(percent-last < 7) return
+if(now-lastEdit < 3000) return
 
 last = percent
+lastEdit = now
 
 await sock.sendMessage(jid,{
 text:progressBar(percent,size),
