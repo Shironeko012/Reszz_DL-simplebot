@@ -10,9 +10,7 @@ const PROCESS_TIMEOUT = 1000 * 60 * 10
 
 
 function spawnYTDLP(args){
-
 return spawn("yt-dlp", args)
-
 }
 
 
@@ -59,7 +57,8 @@ return [
 "--no-part",
 "--no-mtime",
 
-"-f","bestvideo+bestaudio/best",
+// format paling stabil
+"-f","bv*+ba/b",
 
 "--merge-output-format","mp4",
 
@@ -94,6 +93,9 @@ reject(new Error("Download timeout"))
 const handleProgress = (data)=>{
 
 const text = data.toString()
+
+// debug log (optional)
+logger.info(text.trim())
 
 const progress = parseProgress(text)
 
@@ -154,14 +156,13 @@ if(!fs.existsSync(file)) return false
 
 const stat = fs.statSync(file)
 
+// minimal size 10KB
 if(stat.size < 10000) return false
 
 return true
 
 }catch{
-
 return false
-
 }
 
 }
@@ -196,6 +197,8 @@ return file
 
 async function download(job){
 
+let lastError
+
 for(let i=0;i<=MAX_RETRY;i++){
 
 try{
@@ -204,13 +207,15 @@ return await attempt(job,i+1)
 
 }catch(e){
 
-logger.error(`Attempt ${i+1} failed ${e}`)
+lastError = e
 
-if(i === MAX_RETRY) throw e
+logger.error(`Attempt ${i+1} failed ${e.message}`)
+
+}
 
 }
 
-}
+throw lastError
 
 }
 
